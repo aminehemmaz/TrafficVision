@@ -2,6 +2,10 @@
 
 Détection, suivi et comptage de véhicules et de personnes à travers une ligne virtuelle, sur fichier vidéo.
 
+![Démonstration du comptage sur une autoroute](docs/demo.gif)
+
+*`yolo11s` et ByteTrack sur une vidéo d'autoroute (17 premières secondes) : les véhicules sont suivis et comptés dans chaque sens au franchissement de la ligne rouge.*
+
 Statut : en développement (voir la feuille de route en bas de page).
 
 ## Fonctionnalités
@@ -75,7 +79,7 @@ de 280 à 395 selon la taille du modèle (pas de vérité terrain). Détails et 
 ## Feuille de route
 - [x] Validation du comptage sur autoroute ([docs/validation.md](docs/validation.md))
 - [x] Benchmark yolo11n / s / m et ByteTrack / BoT-SORT ([docs/benchmark.md](docs/benchmark.md))
-- [ ] Démo GIF
+- [x] Démo GIF
 - [ ] Zones polygonales et temps de présence
 - [x] Interface web (Streamlit)
 - [ ] Fine-tuning sur dataset custom
