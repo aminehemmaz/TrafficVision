@@ -1,7 +1,6 @@
 """Counting engine: YOLO detection, multi-object tracking and line-crossing counts.
 
-Used by the command-line tool (counter.py), the benchmark (benchmark.py) and the
-web application (app.py).
+Used by the command-line tool (counter.py) and the benchmark (benchmark.py).
 """
 from __future__ import annotations
 
@@ -103,16 +102,6 @@ def video_info(source: str | int) -> VideoInfo:
     )
     cap.release()
     return info
-
-
-def draw_line(frame: np.ndarray, line: tuple[float, float, float, float],
-              thickness: int = 3) -> np.ndarray:
-    """Draw the counting line (relative coordinates) on a copy of the frame."""
-    h, w = frame.shape[:2]
-    out = frame.copy()
-    cv2.line(out, (int(line[0] * w), int(line[1] * h)), (int(line[2] * w), int(line[3] * h)),
-             (0, 0, 255), thickness)
-    return out
 
 
 def _draw(frame, detections, counter, trails, fps, scale):

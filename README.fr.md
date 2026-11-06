@@ -6,7 +6,7 @@ Détection, suivi et comptage de véhicules et de personnes à travers une ligne
 fichier vidéo, avec YOLO11 et ByteTrack.
 
 > **Ce projet est un MVP** : une première version fonctionnelle qui démontre toute la chaîne
-> (détection, suivi, comptage, validation, benchmark et interface web). Voir
+> (détection, suivi, comptage, validation et benchmark). Voir
 > [Limites et pistes d'amélioration](#limites-et-pistes-damélioration) et
 > [Licences et usage commercial](#licences-et-usage-commercial).
 
@@ -20,16 +20,19 @@ suivis et comptés dans chaque sens au franchissement de la ligne rouge.*
 *Trafic dense dans les deux sens, extrait de 15 secondes (`yolo11s` et ByteTrack). Cette scène
 montre aussi les limites actuelles du MVP : les véhicules à moyenne et longue distance sont en
 partie manqués avec la taille d'inférence par défaut, et un panneau fixe est détecté comme une
-voiture. Vidéo complète de 43 secondes :*
+voiture.*
 
-https://github.com/user-attachments/assets/fc8c5489-08af-4554-933c-8beda6b44f60
+*Parking filmé de dessus, 54 secondes complètes (`yolo11s` et ByteTrack) : un piéton et deux
+voitures franchissent la ligne et sont comptés (3 passages), tandis qu'un cycliste est suivi sans
+jamais la franchir.*
+
+https://github.com/user-attachments/assets/48c9292e-b910-4cca-8353-1276f6fbf057
 
 ## Fonctionnalités
 - Détection YOLO11 (poids COCO) filtrée par classe
 - Suivi multi-objets (ByteTrack ou BoT-SORT) avec identifiants persistants
 - Comptage directionnel (IN / OUT) par classe, chaque objet compté une seule fois
 - Trajectoires, compteurs et FPS à l'écran, vidéo annotée et journal CSV des passages
-- Interface web pour analyser une vidéo sans ligne de commande
 
 ## Installation
 Testé avec Python 3.13 sous Windows, processeur uniquement.
@@ -55,22 +58,11 @@ Sorties : `outputs/result.mp4` (vidéo annotée) et `outputs/events.csv` (journa
 Pour les vidéos 4K, `--imgsz 1280` améliore la détection des véhicules lointains et
 `--out-width` (1280 par défaut) limite la taille de la vidéo annotée.
 
-## Application web
-Envoyez une vidéo, placez la ligne de comptage sur un aperçu, choisissez le modèle et les classes,
-suivez l'analyse en direct, puis récupérez les résultats : compteurs, passages par classe et dans
-le temps, vidéo annotée et journal CSV à télécharger.
-```bash
-streamlit run src/app.py
-```
-Le calcul s'exécute sur le processeur : la durée analysée est donc limitée (30 s par défaut,
-120 s au plus) pour garder un temps de réponse raisonnable.
-
 ## Structure du dépôt
 | Chemin | Rôle |
 |---|---|
 | `src/engine.py` | Moteur : détection, suivi, franchissement de ligne, annotation |
 | `src/counter.py` | Interface en ligne de commande |
-| `src/app.py` | Application web (Streamlit) |
 | `src/benchmark.py` | Comparaison de modèles et de trackers face à une vérité terrain |
 | `benchmark/ground_truth/` | Vérités terrain (comptages manuels) |
 | `docs/` | Validation, benchmark et graphiques |
@@ -82,8 +74,9 @@ Les vidéos ne sont pas versionnées. Exemple utilisé pendant le développement
 curl -L -o data/highway.mp4 https://media.roboflow.com/supervision/video-examples/vehicles.mp4
 python src/counter.py --source data/highway.mp4 --imgsz 1280 --line 0 0.6 1 0.6
 ```
-Les vues de dessus (parking filmé à la verticale) donnent de mauvais résultats avec les poids COCO :
-préférer une vue en hauteur oblique ou de côté.
+Les vues de dessus (parking filmé à la verticale) sont plus difficiles pour les poids COCO : sur
+l'une de ces vidéos, `yolo11n` a trouvé très peu de véhicules, alors que `yolo11s` a bien suivi
+les voitures et le piéton d'une autre. Une vue en hauteur oblique ou de côté est le choix le plus sûr.
 
 ## Résultats
 Sur une vidéo d'autoroute avec vérité terrain manuelle (9 passages), `yolo11s` + ByteTrack compte
@@ -102,7 +95,7 @@ Limites connues de ce MVP :
 - Un objet fixe peut être détecté en permanence comme un véhicule (par exemple un panneau sur un mur).
 - Seules les 80 classes COCO sont disponibles, et les poids ne sont pas adaptés à une scène précise.
 - La validation repose sur une seule vidéo comptée à la main, avec 9 passages.
-- Le calcul s'exécute sur le processeur, ce qui limite la vitesse et la durée analysée.
+- Le calcul s'exécute sur le processeur, ce qui limite la vitesse de traitement.
 
 Améliorations nécessaires :
 - **Qualité de détection** : affiner (fine-tuning) le détecteur sur un jeu de données annoté des
@@ -111,8 +104,6 @@ Améliorations nécessaires :
 - **Comptage avancé** : zones polygonales (entrée, sortie, zone d'attente), temps de présence par
   objet, estimation de vitesse (nécessite un étalonnage de la caméra) et statistiques exportées
   (CSV, trafic par minute).
-- **Interface web** : tracer la ligne ou les zones directement sur l'aperçu au lieu de curseurs,
-  plusieurs lignes par vidéo, et graphiques de statistiques par intervalle de temps.
 - **Validation** : davantage de vidéos avec une vérité terrain fiable, dans des conditions variées
   (trafic dense, nuit, pluie).
 
