@@ -43,8 +43,19 @@ python src/counter.py --source data/highway.mp4 --imgsz 1280 --line 0 0.6 1 0.6
 Les vues de dessus (parking filmé à la verticale) donnent de mauvais résultats avec les poids COCO :
 préférer une vue en hauteur oblique ou de côté.
 
+## Résultats
+Sur une vidéo d'autoroute avec vérité terrain manuelle (9 passages), `yolo11s` + ByteTrack compte
+exactement les 9 passages, avec le bon sens, à 7,6 FPS sur CPU ; `yolo11n` est le plus rapide
+(13,9 FPS) mais ajoute un passage en trop. Sur une vidéo de trafic dense, le total compté varie
+de 280 à 395 selon la taille du modèle (pas de vérité terrain). Détails et limites :
+[docs/benchmark.md](docs/benchmark.md).
+
+![Benchmark](docs/benchmark.png)
+
 ## Feuille de route
-- [ ] Démo GIF + benchmark (yolo11n vs s vs m : FPS / précision du comptage)
+- [x] Validation du comptage sur autoroute ([docs/validation.md](docs/validation.md))
+- [x] Benchmark yolo11n / s / m et ByteTrack / BoT-SORT ([docs/benchmark.md](docs/benchmark.md))
+- [ ] Démo GIF
 - [ ] Zones polygonales et temps de présence
 - [ ] Interface Streamlit
 - [ ] Fine-tuning sur dataset custom

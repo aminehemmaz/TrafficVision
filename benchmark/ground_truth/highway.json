@@ -1,0 +1,17 @@
+{
+  "video": "highway.mp4",
+  "line": [0.0, 0.6, 1.0, 0.6],
+  "fps": 25,
+  "note": "Comptage manuel sur images echantillonnees (1 sur 10), numeros d'image approximatifs (+/- 10).",
+  "events": [
+    {"frame": 10,  "direction": "in",  "label": "voiture noire"},
+    {"frame": 21,  "direction": "in",  "label": "voiture blanche"},
+    {"frame": 210, "direction": "in",  "label": "voiture sombre"},
+    {"frame": 350, "direction": "in",  "label": "Skoda grise"},
+    {"frame": 410, "direction": "in",  "label": "camion DAF"},
+    {"frame": 480, "direction": "in",  "label": "voiture bleue"},
+    {"frame": 10,  "direction": "out", "label": "voiture grise"},
+    {"frame": 70,  "direction": "out", "label": "voiture grise"},
+    {"frame": 415, "direction": "out", "label": "voiture blanche"}
+  ]
+}
