@@ -12,9 +12,7 @@ import json
 import time
 from pathlib import Path
 
-import cv2
-
-from counter import COCO_CLASSES, DEFAULT_CLASSES, side
+from engine import DEFAULT_CLASSES, Settings, run
 
 TOLERANCE = 25  # images (1 s a 25 fps) pour apparier un evenement a la verite terrain
 
@@ -47,39 +45,19 @@ def read_csv_events(path: str) -> list[dict]:
 
 def run_config(model_name: str, tracker: str, source: str, line: list[float],
                imgsz: int, conf: float, classes: list[str]) -> dict:
-    from ultralytics import YOLO
-
-    cap = cv2.VideoCapture(source)
-    w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap.release()
-    a = (int(line[0] * w), int(line[1] * h))
-    b = (int(line[2] * w), int(line[3] * h))
-
-    model = YOLO(model_name)
-    ids = [COCO_CLASSES[c] for c in classes]
-    last_side: dict[int, float] = {}
-    counted: set[int] = set()
-    seen: set[int] = set()
+    settings = Settings(model=model_name, classes=classes, line=tuple(line), conf=conf,
+                        imgsz=imgsz, tracker=tracker, annotate=False)
     events: list[dict] = []
-    n = 0
+    n, seen = 0, 0
     t0 = time.time()
-    for r in model.track(source=source, stream=True, persist=True, tracker=tracker,
-                         classes=ids, conf=conf, imgsz=imgsz, verbose=False):
-        bx = r.boxes
-        if bx is not None and bx.id is not None:
-            for (x1, y1, x2, y2), tid in zip(bx.xyxy.cpu().numpy(), bx.id.int().cpu().tolist()):
-                seen.add(tid)
-                s = side(((x1 + x2) / 2, y2), a, b)
-                prev = last_side.get(tid)
-                if prev is not None and tid not in counted and prev * s < 0:
-                    counted.add(tid)
-                    events.append({"frame": n, "direction": "in" if prev < 0 < s else "out"})
-                last_side[tid] = s
-        n += 1
+    for step in run(source, settings):
+        n = step.index + 1
+        seen = len(step.counter.seen)
+        events += [{"frame": e.frame, "direction": e.direction} for e in step.events]
     elapsed = time.time() - t0
     return {"model": model_name, "tracker": tracker, "imgsz": imgsz, "conf": conf,
             "frames": n, "seconds": round(elapsed, 1), "fps": round(n / elapsed, 2),
-            "unique_tracks": len(seen), "events": events,
+            "unique_tracks": seen, "events": events,
             "in": sum(e["direction"] == "in" for e in events),
             "out": sum(e["direction"] == "out" for e in events)}
 

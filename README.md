@@ -1,8 +1,8 @@
 ﻿# TrafficVision : comptage d'objets en temps réel (YOLO11 + ByteTrack)
 
-Détection, suivi et comptage de véhicules / personnes à travers une ligne virtuelle, sur vidéo ou webcam.
+Détection, suivi et comptage de véhicules et de personnes à travers une ligne virtuelle, sur fichier vidéo.
 
-> 🚧 Projet en cours — démo GIF et benchmarks à venir.
+Statut : en développement (voir la feuille de route en bas de page).
 
 ## Fonctionnalités
 - Détection YOLO11 (COCO) filtrée par classe
@@ -22,8 +22,8 @@ pip install -r requirements.txt
 # Vidéo (placer le fichier dans data/)
 python src/counter.py --source data/traffic.mp4 --show
 
-# Webcam, comptage de personnes
-python src/counter.py --source 0 --classes person --show
+# Comptage de personnes
+python src/counter.py --source data/street.mp4 --classes person --show
 
 # Ligne personnalisée (coordonnées relatives x1 y1 x2 y2)
 python src/counter.py --source data/traffic.mp4 --line 0.1 0.6 0.9 0.6
@@ -32,6 +32,26 @@ Sorties : `outputs/result.mp4` et `outputs/events.csv`.
 
 Pour les vidéos 4K, `--imgsz 1280` améliore la détection des véhicules lointains et
 `--out-width` (1280 par défaut) limite la taille de la vidéo annotée.
+
+## Application web
+Une interface permet d'analyser une vidéo sans ligne de commande : envoi du fichier, réglage de la
+ligne sur un aperçu, choix du modèle et des classes, suivi en direct, puis résultats (compteurs,
+passages par classe et dans le temps, vidéo annotée et journal CSV à télécharger).
+```bash
+streamlit run src/app.py
+```
+Le calcul s'exécute sur le processeur : l'application limite la durée analysée (30 s par défaut,
+120 s au plus) pour garder un temps de réponse raisonnable.
+
+## Structure du dépôt
+| Chemin | Rôle |
+|---|---|
+| `src/engine.py` | Moteur : détection, suivi, franchissement de ligne, annotation |
+| `src/counter.py` | Interface en ligne de commande |
+| `src/app.py` | Application web (Streamlit) |
+| `src/benchmark.py` | Comparaison modèles et trackers face à une vérité terrain |
+| `benchmark/ground_truth/` | Vérités terrain (comptage manuel) |
+| `docs/` | Validation, benchmark et graphiques |
 
 ## Vidéo de test
 Les vidéos ne sont pas versionnées. Exemple utilisé pendant le développement
@@ -57,6 +77,6 @@ de 280 à 395 selon la taille du modèle (pas de vérité terrain). Détails et 
 - [x] Benchmark yolo11n / s / m et ByteTrack / BoT-SORT ([docs/benchmark.md](docs/benchmark.md))
 - [ ] Démo GIF
 - [ ] Zones polygonales et temps de présence
-- [ ] Interface Streamlit
+- [x] Interface web (Streamlit)
 - [ ] Fine-tuning sur dataset custom
 - [ ] Export ONNX et déploiement (Docker / Hugging Face Spaces)
