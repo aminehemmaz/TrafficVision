@@ -1,86 +1,84 @@
-﻿# TrafficVision : comptage d'objets en temps réel (YOLO11 + ByteTrack)
+﻿# TrafficVision
 
-Détection, suivi et comptage de véhicules et de personnes à travers une ligne virtuelle, sur fichier vidéo.
+**English** | [Français](README.fr.md)
 
-![Démonstration du comptage sur une autoroute](docs/demo.gif)
+Detection, tracking and line-crossing counting of vehicles and people in video files, built on
+YOLO11 and ByteTrack.
 
-*`yolo11s` et ByteTrack sur une vidéo d'autoroute (17 premières secondes) : les véhicules sont suivis et comptés dans chaque sens au franchissement de la ligne rouge.*
+![Counting demo on a highway](docs/demo.gif)
 
-Statut : en développement (voir la feuille de route en bas de page).
+*`yolo11s` with ByteTrack on a highway video (first 17 seconds): vehicles are tracked and counted
+in each direction as they cross the red line.*
 
-## Fonctionnalités
-- Détection YOLO11 (COCO) filtrée par classe
-- Tracking multi-objets (ByteTrack / BoT-SORT) avec identifiants persistants
-- Comptage directionnel (IN / OUT) par classe, sans double comptage
-- Trajectoires, HUD (compteurs + FPS), vidéo annotée et journal CSV des passages
+## Features
+- YOLO11 detection (COCO weights), filtered by class
+- Multi-object tracking (ByteTrack or BoT-SORT) with persistent identifiers
+- Directional counting (IN / OUT) per class, each object counted once
+- Trails, on-screen counters and FPS, annotated video and CSV crossing log
+- Web interface to analyse a video without the command line
 
 ## Installation
+Tested with Python 3.13 on Windows, CPU only.
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\activate        # Linux / macOS: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Utilisation
+## Command-line usage
 ```bash
-# Vidéo (placer le fichier dans data/)
+# Count vehicles in a video (put the file in data/)
 python src/counter.py --source data/traffic.mp4 --show
 
-# Comptage de personnes
+# Count people
 python src/counter.py --source data/street.mp4 --classes person --show
 
-# Ligne personnalisée (coordonnées relatives x1 y1 x2 y2)
+# Custom line (relative coordinates x1 y1 x2 y2)
 python src/counter.py --source data/traffic.mp4 --line 0.1 0.6 0.9 0.6
 ```
-Sorties : `outputs/result.mp4` et `outputs/events.csv`.
+Outputs: `outputs/result.mp4` (annotated video) and `outputs/events.csv` (crossing log).
 
-Pour les vidéos 4K, `--imgsz 1280` améliore la détection des véhicules lointains et
-`--out-width` (1280 par défaut) limite la taille de la vidéo annotée.
+For 4K videos, `--imgsz 1280` improves detection of distant vehicles, and `--out-width`
+(1280 by default) limits the size of the annotated video.
 
-## Application web
-Une interface permet d'analyser une vidéo sans ligne de commande : envoi du fichier, réglage de la
-ligne sur un aperçu, choix du modèle et des classes, suivi en direct, puis résultats (compteurs,
-passages par classe et dans le temps, vidéo annotée et journal CSV à télécharger).
+## Web application
+Upload a video, place the counting line on a preview, choose the model and classes, follow the
+analysis live, then get the results: counters, crossings by class and over time, annotated video
+and CSV log to download.
 ```bash
 streamlit run src/app.py
 ```
-Le calcul s'exécute sur le processeur : l'application limite la durée analysée (30 s par défaut,
-120 s au plus) pour garder un temps de réponse raisonnable.
+Computation runs on the CPU, so the analysed duration is limited (30 s by default, 120 s at most)
+to keep response times reasonable.
 
-## Structure du dépôt
-| Chemin | Rôle |
+## Repository layout
+| Path | Role |
 |---|---|
-| `src/engine.py` | Moteur : détection, suivi, franchissement de ligne, annotation |
-| `src/counter.py` | Interface en ligne de commande |
-| `src/app.py` | Application web (Streamlit) |
-| `src/benchmark.py` | Comparaison modèles et trackers face à une vérité terrain |
-| `benchmark/ground_truth/` | Vérités terrain (comptage manuel) |
-| `docs/` | Validation, benchmark et graphiques |
+| `src/engine.py` | Engine: detection, tracking, line crossing, annotation |
+| `src/counter.py` | Command-line interface |
+| `src/app.py` | Web application (Streamlit) |
+| `src/benchmark.py` | Models and trackers compared against a ground truth |
+| `benchmark/ground_truth/` | Ground truths (manual counts) |
+| `docs/` | Validation, benchmark and charts |
 
-## Vidéo de test
-Les vidéos ne sont pas versionnées. Exemple utilisé pendant le développement
-(autoroute, 4K, 22 s), issue des exemples de la bibliothèque Roboflow `supervision` :
+## Test video
+Videos are not versioned. Example used during development (highway, 4K, 22 s), from the
+Roboflow `supervision` video examples:
 ```bash
 curl -L -o data/highway.mp4 https://media.roboflow.com/supervision/video-examples/vehicles.mp4
 python src/counter.py --source data/highway.mp4 --imgsz 1280 --line 0 0.6 1 0.6
 ```
-Les vues de dessus (parking filmé à la verticale) donnent de mauvais résultats avec les poids COCO :
-préférer une vue en hauteur oblique ou de côté.
+Top-down views (a car park filmed from straight above) give poor results with COCO weights:
+prefer an elevated oblique view or a side view.
 
-## Résultats
-Sur une vidéo d'autoroute avec vérité terrain manuelle (9 passages), `yolo11s` + ByteTrack compte
-exactement les 9 passages, avec le bon sens, à 7,6 FPS sur CPU ; `yolo11n` est le plus rapide
-(13,9 FPS) mais ajoute un passage en trop. Sur une vidéo de trafic dense, le total compté varie
-de 280 à 395 selon la taille du modèle (pas de vérité terrain). Détails et limites :
-[docs/benchmark.md](docs/benchmark.md).
+## Results
+On a highway video with a manual ground truth (9 crossings), `yolo11s` + ByteTrack counts exactly
+the 9 crossings, in the right direction, at 7.6 FPS on CPU; `yolo11n` is the fastest (13.9 FPS)
+but adds one extra crossing. On a dense-traffic video, the total count varies from 280 to 395
+depending on model size (no ground truth). Details and limitations:
+[docs/benchmark.md](docs/benchmark.md) and [docs/validation.md](docs/validation.md).
 
 ![Benchmark](docs/benchmark.png)
 
-## Feuille de route
-- [x] Validation du comptage sur autoroute ([docs/validation.md](docs/validation.md))
-- [x] Benchmark yolo11n / s / m et ByteTrack / BoT-SORT ([docs/benchmark.md](docs/benchmark.md))
-- [x] Démo GIF
-- [ ] Zones polygonales et temps de présence
-- [x] Interface web (Streamlit)
-- [ ] Fine-tuning sur dataset custom
-- [ ] Export ONNX et déploiement (Docker / Hugging Face Spaces)
+## License
+MIT, see [LICENSE](LICENSE).

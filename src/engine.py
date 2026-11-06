@@ -1,7 +1,7 @@
-"""Moteur de comptage : détection YOLO, suivi multi-objets et franchissement de ligne.
+"""Counting engine: YOLO detection, multi-object tracking and line-crossing counts.
 
-Ce module est utilisé par le script en ligne de commande (counter.py), le benchmark
-(benchmark.py) et l'application web (app.py).
+Used by the command-line tool (counter.py), the benchmark (benchmark.py) and the
+web application (app.py).
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from typing import Iterator
 import cv2
 import numpy as np
 
-# Classes COCO utilisables pour le comptage
+# COCO classes available for counting
 COCO_CLASSES = {
     "person": 0, "bicycle": 1, "car": 2, "motorcycle": 3, "bus": 5, "truck": 7,
 }
@@ -23,22 +23,22 @@ Point = tuple[float, float]
 
 
 def side(p: Point, a: Point, b: Point) -> float:
-    """Signe indiquant de quel côté de la droite (a -> b) se trouve le point p."""
+    """Sign telling on which side of the line (a -> b) the point p lies."""
     return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
 
 
 @dataclass
 class Event:
-    """Passage d'un objet suivi à travers la ligne de comptage."""
+    """A tracked object crossing the counting line."""
     frame: int
     time_s: float
     track_id: int
     label: str
-    direction: str  # "in" : de l'amont vers l'aval de la ligne (côté positif), "out" : l'inverse
+    direction: str  # "in": towards the positive side of the line, "out": the opposite
 
 
 class LineCounter:
-    """Compte les objets qui franchissent une ligne, une seule fois par identifiant de piste."""
+    """Counts objects crossing a line, once per track identifier."""
 
     def __init__(self, start: Point, end: Point) -> None:
         self.start, self.end = start, end
@@ -66,7 +66,7 @@ class LineCounter:
 class Settings:
     model: str = "yolo11n.pt"
     classes: list[str] = field(default_factory=lambda: list(DEFAULT_CLASSES))
-    line: tuple[float, float, float, float] = (0.0, 0.6, 1.0, 0.6)  # coordonnées relatives
+    line: tuple[float, float, float, float] = (0.0, 0.6, 1.0, 0.6)  # relative coordinates
     conf: float = 0.3
     imgsz: int = 640
     tracker: str = "bytetrack.yaml"
@@ -79,13 +79,13 @@ class VideoInfo:
     width: int
     height: int
     fps: float
-    frames: int  # 0 si inconnu (flux caméra)
+    frames: int  # 0 if unknown
 
 
 @dataclass
 class Step:
     index: int
-    frame: np.ndarray | None  # image annotée (None si annotate=False)
+    frame: np.ndarray | None  # annotated frame (None when annotate=False)
     events: list[Event]
     counter: LineCounter
     fps: float
@@ -94,7 +94,7 @@ class Step:
 def video_info(source: str | int) -> VideoInfo:
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():
-        raise ValueError(f"Impossible d'ouvrir la source vidéo : {source}")
+        raise ValueError(f"Cannot open video source: {source}")
     info = VideoInfo(
         width=int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
         height=int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
@@ -107,7 +107,7 @@ def video_info(source: str | int) -> VideoInfo:
 
 def draw_line(frame: np.ndarray, line: tuple[float, float, float, float],
               thickness: int = 3) -> np.ndarray:
-    """Trace la ligne de comptage (coordonnées relatives) sur une copie de l'image."""
+    """Draw the counting line (relative coordinates) on a copy of the frame."""
     h, w = frame.shape[:2]
     out = frame.copy()
     cv2.line(out, (int(line[0] * w), int(line[1] * h)), (int(line[2] * w), int(line[3] * h)),
@@ -143,22 +143,22 @@ def _draw(frame, detections, counter, trails, fps, scale):
 
 def run(source: str | int, settings: Settings, model=None,
         max_frames: int | None = None) -> Iterator[Step]:
-    """Analyse une source vidéo et produit un `Step` par image.
+    """Analyse a video source and yield one `Step` per frame.
 
-    `model` permet de réutiliser des poids déjà chargés. Le suivi est réinitialisé à chaque
-    appel pour qu'une analyse ne dépende pas de la précédente.
+    `model` lets the caller reuse already loaded weights. Tracking is reset on every
+    call so that one analysis never depends on the previous one.
     """
     from ultralytics import YOLO
 
     info = video_info(source)
-    scale = max(info.width / 1280, 1.0)  # échelle des annotations pour les grandes résolutions
+    scale = max(info.width / 1280, 1.0)  # annotation scale for high resolutions
     start = (settings.line[0] * info.width, settings.line[1] * info.height)
     end = (settings.line[2] * info.width, settings.line[3] * info.height)
     out_w = min(settings.out_width, info.width)
     out_h = int(info.height * out_w / info.width)
 
     model = model or YOLO(settings.model)
-    model.predictor = None  # force un nouveau suivi (identifiants repartant de zéro)
+    model.predictor = None  # forces a fresh tracker (track ids restart from zero)
     class_ids = [COCO_CLASSES[c] for c in settings.classes]
 
     counter = LineCounter(start, end)
@@ -177,7 +177,7 @@ def run(source: str | int, settings: Settings, model=None,
                 for xyxy, tid, cid in zip(boxes.xyxy.cpu().numpy(), boxes.id.int().cpu().tolist(),
                                           boxes.cls.int().cpu().tolist()):
                     label = result.names[cid]
-                    point = ((xyxy[0] + xyxy[2]) / 2, xyxy[3])  # milieu du bord bas : contact avec la route
+                    point = ((xyxy[0] + xyxy[2]) / 2, xyxy[3])  # bottom centre: ground contact point
                     trails[tid].append((int(point[0]), int(point[1])))
                     detections.append((tid, label, xyxy))
                     event = counter.update(tid, point, label, index, info.fps)
@@ -185,7 +185,7 @@ def run(source: str | int, settings: Settings, model=None,
                         events.append(event)
 
             now = time.time()
-            instant = 1 / max(now - t_prev, 1e-6)  # temps total par image, inférence comprise
+            instant = 1 / max(now - t_prev, 1e-6)  # total time per frame, inference included
             t_prev = now
             fps_smooth = instant if fps_smooth == 0 else 0.9 * fps_smooth + 0.1 * instant
 

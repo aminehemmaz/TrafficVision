@@ -1,6 +1,6 @@
-"""Comptage d'objets en ligne de commande : YOLO11 + ByteTrack + ligne virtuelle.
+"""Command-line object counting: YOLO11 + ByteTrack + virtual line.
 
-Exemples :
+Examples:
     python src/counter.py --source data/traffic.mp4 --show
     python src/counter.py --source data/traffic.mp4 --line 0.1 0.6 0.9 0.6
 """
@@ -17,23 +17,23 @@ from engine import COCO_CLASSES, DEFAULT_CLASSES, Settings, run, video_info
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Comptage + suivi (YOLO11 + ByteTrack)")
-    p.add_argument("--source", required=True, help="chemin du fichier vidéo")
-    p.add_argument("--model", default="yolo11n.pt", help="poids YOLO (yolo11n/s/m...)")
+    p = argparse.ArgumentParser(description="Counting + tracking (YOLO11 + ByteTrack)")
+    p.add_argument("--source", required=True, help="path to the video file")
+    p.add_argument("--model", default="yolo11n.pt", help="YOLO weights (yolo11n/s/m...)")
     p.add_argument("--classes", nargs="+", default=DEFAULT_CLASSES,
-                   choices=list(COCO_CLASSES), help="classes à compter")
+                   choices=list(COCO_CLASSES), help="classes to count")
     p.add_argument("--line", nargs=4, type=float, default=[0.0, 0.6, 1.0, 0.6],
                    metavar=("X1", "Y1", "X2", "Y2"),
-                   help="ligne de comptage en coordonnées relatives (0-1)")
-    p.add_argument("--conf", type=float, default=0.3, help="seuil de confiance")
-    p.add_argument("--imgsz", type=int, default=640, help="taille d'inférence")
-    p.add_argument("--tracker", default="bytetrack.yaml", help="bytetrack.yaml ou botsort.yaml")
-    p.add_argument("--output", default="outputs/result.mp4", help="vidéo annotée en sortie")
-    p.add_argument("--csv", default="outputs/events.csv", help="journal des passages")
+                   help="counting line in relative coordinates (0-1)")
+    p.add_argument("--conf", type=float, default=0.3, help="confidence threshold")
+    p.add_argument("--imgsz", type=int, default=640, help="inference size")
+    p.add_argument("--tracker", default="bytetrack.yaml", help="bytetrack.yaml or botsort.yaml")
+    p.add_argument("--output", default="outputs/result.mp4", help="annotated output video")
+    p.add_argument("--csv", default="outputs/events.csv", help="crossing log")
     p.add_argument("--out-width", type=int, default=1280,
-                   help="largeur de la vidéo annotée (réduit les sources 4K)")
-    p.add_argument("--show", action="store_true", help="afficher la fenêtre en direct (q pour quitter)")
-    p.add_argument("--no-save", action="store_true", help="ne pas écrire la vidéo")
+                   help="width of the annotated video (downsizes 4K sources)")
+    p.add_argument("--show", action="store_true", help="show a live window (press q to quit)")
+    p.add_argument("--no-save", action="store_true", help="do not write the video")
     return p.parse_args()
 
 
@@ -41,7 +41,7 @@ def main() -> None:
     args = parse_args()
     source = args.source
     if not Path(source).exists():
-        raise SystemExit(f"Source introuvable : {source}")
+        raise SystemExit(f"Source not found: {source}")
     try:
         info = video_info(source)
     except ValueError as err:
@@ -69,7 +69,7 @@ def main() -> None:
                                              info.fps, (w, h))
                 writer.write(step.frame)
             if args.show:
-                cv2.imshow("Comptage", step.frame)
+                cv2.imshow("Counting", step.frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
 
@@ -77,11 +77,11 @@ def main() -> None:
         writer.release()
     cv2.destroyAllWindows()
     elapsed = time.time() - t0
-    print(f"{frames} images en {elapsed:.1f} s ({frames / max(elapsed, 1e-6):.1f} FPS moyen)")
+    print(f"{frames} frames in {elapsed:.1f} s ({frames / max(elapsed, 1e-6):.1f} FPS average)")
     if counter:
-        print(f"Total -> IN : {counter.counts['in']}  OUT : {counter.counts['out']}")
+        print(f"Total -> IN: {counter.counts['in']}  OUT: {counter.counts['out']}")
         for name, v in sorted(counter.per_class.items()):
-            print(f"  {name} : in {v['in']} / out {v['out']}")
+            print(f"  {name}: in {v['in']} / out {v['out']}")
 
 
 if __name__ == "__main__":

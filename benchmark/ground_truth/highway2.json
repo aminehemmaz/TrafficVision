@@ -2,6 +2,6 @@
   "video": "highway2.mp4",
   "line": [0.0, 0.75, 1.0, 0.75],
   "fps": 29.97,
-  "note": "Trafic dense dans les deux sens : pas de verite terrain fiable. Sert a comparer la coherence entre configurations.",
+  "note": "Dense two-way traffic: no reliable ground truth. Used to compare consistency between configurations.",
   "events": null
 }

@@ -1,8 +1,8 @@
-"""Benchmark modeles x trackers contre une verite terrain.
+"""Benchmark of models x trackers against a manually counted ground truth.
 
-Exemple :
-    python src/benchmark.py --source data/highway.mp4 --gt benchmark/ground_truth/highway.json
-    python src/benchmark.py --check outputs/highway.csv   # evalue un CSV existant
+Examples:
+    python src/benchmark.py --source data/highway_720p.mp4 --gt benchmark/ground_truth/highway.json
+    python src/benchmark.py --check outputs/highway.csv   # score an existing crossing log
 """
 from __future__ import annotations
 
@@ -14,11 +14,11 @@ from pathlib import Path
 
 from engine import DEFAULT_CLASSES, Settings, run
 
-TOLERANCE = 25  # images (1 s a 25 fps) pour apparier un evenement a la verite terrain
+TOLERANCE = 25  # frames (1 s at 25 fps) allowed between a detected and a ground-truth crossing
 
 
 def match_events(pred: list[dict], gt: list[dict], tol: int = TOLERANCE) -> dict:
-    """Appariement glouton (meme sens, ecart d'images <= tol). Retourne TP/FP/FN et scores."""
+    """Greedy matching (same direction, frame gap <= tol). Returns TP/FP/FN and scores."""
     free = list(range(len(gt)))
     tp = 0
     for p in sorted(pred, key=lambda e: e["frame"]):
@@ -63,7 +63,7 @@ def run_config(model_name: str, tracker: str, source: str, line: list[float],
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(description="Benchmark of models x trackers")
     p.add_argument("--source", default="data/highway.mp4")
     p.add_argument("--gt", default="benchmark/ground_truth/highway.json")
     p.add_argument("--models", nargs="+", default=["yolo11n.pt", "yolo11s.pt", "yolo11m.pt"])
@@ -71,8 +71,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--imgsz", type=int, default=640)
     p.add_argument("--conf", type=float, default=0.3)
     p.add_argument("--out", default="outputs/benchmark.json")
-    p.add_argument("--check", help="evalue un CSV de passages existant et quitte")
-    p.add_argument("--only", nargs="*", help="limiter a des paires modele:tracker (ex: yolo11n.pt:bytetrack.yaml)")
+    p.add_argument("--check", help="score an existing crossing log (CSV) and exit")
+    p.add_argument("--only", nargs="*",
+                   help="restrict to model:tracker pairs (e.g. yolo11n.pt:bytetrack.yaml)")
     return p.parse_args()
 
 
@@ -96,7 +97,7 @@ def main() -> None:
             res.update(match_events(res["events"], gt["events"]))
             quality = f"TP {res['tp']} FP {res['fp']} FN {res['fn']}"
         else:
-            quality = "sans verite terrain"
+            quality = "no ground truth"
         results.append(res)
         print(f"   {res['seconds']}s | {res['fps']} FPS | IN {res['in']} OUT {res['out']} | "
               f"{quality} | tracks {res['unique_tracks']}", flush=True)
