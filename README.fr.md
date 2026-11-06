@@ -5,10 +5,24 @@
 Détection, suivi et comptage de véhicules et de personnes à travers une ligne virtuelle, sur
 fichier vidéo, avec YOLO11 et ByteTrack.
 
+> **Ce projet est un MVP** : une première version fonctionnelle qui démontre toute la chaîne
+> (détection, suivi, comptage, validation, benchmark et interface web). Voir
+> [Limites et pistes d'amélioration](#limites-et-pistes-damélioration) et
+> [Licences et usage commercial](#licences-et-usage-commercial).
+
 ![Démonstration du comptage sur une autoroute](docs/demo.gif)
 
 *`yolo11s` et ByteTrack sur une vidéo d'autoroute (17 premières secondes) : les véhicules sont
 suivis et comptés dans chaque sens au franchissement de la ligne rouge.*
+
+![Démonstration du comptage sur un trafic dense dans les deux sens](docs/demo_dense.gif)
+
+*Trafic dense dans les deux sens, extrait de 15 secondes (`yolo11s` et ByteTrack). Cette scène
+montre aussi les limites actuelles du MVP : les véhicules à moyenne et longue distance sont en
+partie manqués avec la taille d'inférence par défaut, et un panneau fixe est détecté comme une
+voiture. Vidéo complète de 43 secondes :*
+
+https://github.com/user-attachments/assets/fc8c5489-08af-4554-933c-8beda6b44f60
 
 ## Fonctionnalités
 - Détection YOLO11 (poids COCO) filtrée par classe
@@ -80,5 +94,43 @@ de 280 à 395 selon la taille du modèle (pas de vérité terrain). Détails et 
 
 ![Benchmark](docs/benchmark.fr.png)
 
+## Limites et pistes d'amélioration
+Limites connues de ce MVP :
+- Sur les scènes denses, la détection est incomplète pour les véhicules à moyenne et longue
+  distance avec la taille d'inférence par défaut : les comptages sont sous-estimés (voir
+  [docs/fr/benchmark.md](docs/fr/benchmark.md)).
+- Un objet fixe peut être détecté en permanence comme un véhicule (par exemple un panneau sur un mur).
+- Seules les 80 classes COCO sont disponibles, et les poids ne sont pas adaptés à une scène précise.
+- La validation repose sur une seule vidéo comptée à la main, avec 9 passages.
+- Le calcul s'exécute sur le processeur, ce qui limite la vitesse et la durée analysée.
+
+Améliorations nécessaires :
+- **Qualité de détection** : affiner (fine-tuning) le détecteur sur un jeu de données annoté des
+  scènes visées (point de vue, éclairage, types de véhicules), et utiliser une taille d'inférence
+  plus grande ou un découpage de l'image pour les véhicules lointains.
+- **Comptage avancé** : zones polygonales (entrée, sortie, zone d'attente), temps de présence par
+  objet, estimation de vitesse (nécessite un étalonnage de la caméra) et statistiques exportées
+  (CSV, trafic par minute).
+- **Interface web** : tracer la ligne ou les zones directement sur l'aperçu au lieu de curseurs,
+  plusieurs lignes par vidéo, et graphiques de statistiques par intervalle de temps.
+- **Validation** : davantage de vidéos avec une vérité terrain fiable, dans des conditions variées
+  (trafic dense, nuit, pluie).
+
+## Licences et usage commercial
+Ce MVP s'appuie sur Ultralytics YOLO11, publié sous licence **AGPL-3.0** (code, poids et trackers
+intégrés au paquet). L'AGPL autorise bien l'usage commercial, mais seulement si ses conditions sont
+respectées, en particulier mettre le code source complet de l'application à disposition de ses
+utilisateurs, y compris lorsqu'elle est proposée comme service en ligne. Pour utiliser YOLO dans un
+produit commercial à code fermé, Ultralytics vend une licence Entreprise ; son prix est donné sur
+demande et n'est pas publié.
+
+Pour un projet commercial, l'alternative consiste à utiliser des modèles sous licence permissive,
+comme **RT-DETR** (version temps réel de DETR, le DEtection TRansformer), dont les modèles publiés
+sur Hugging Face sont sous Apache-2.0 (vérifier la fiche de chaque modèle), affinés sur vos propres
+données. Ce sont des informations générales, pas un avis juridique.
+
+Je travaille déjà sur une version 100 % souveraine de ce projet.
+
 ## Licence
-MIT, voir [LICENSE](LICENSE).
+Le code de ce dépôt est publié sous licence MIT, voir [LICENSE](LICENSE).
+Les composants tiers, comme Ultralytics, conservent leurs propres licences (voir ci-dessus).
