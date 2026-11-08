@@ -26,7 +26,7 @@ voiture.*
 voitures franchissent la ligne et sont comptés (3 passages), tandis qu'un cycliste est suivi sans
 jamais la franchir.*
 
-https://github.com/user-attachments/assets/48c9292e-b910-4cca-8353-1276f6fbf057
+https://github.com/user-attachments/assets/19f67883-d225-46dc-a157-65886acb328a
 
 ## Fonctionnalités
 - Détection YOLO11 (poids COCO) filtrée par classe

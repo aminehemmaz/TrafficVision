@@ -24,7 +24,7 @@ inference size, and a fixed road sign is detected as a car.*
 *Car park filmed from above, full 54 seconds (`yolo11s` with ByteTrack): a pedestrian and two cars
 cross the line and are counted (3 crossings), while a cyclist is tracked but never crosses it.*
 
-https://github.com/user-attachments/assets/48c9292e-b910-4cca-8353-1276f6fbf057
+https://github.com/user-attachments/assets/19f67883-d225-46dc-a157-65886acb328a
 
 ## Features
 - YOLO11 detection (COCO weights), filtered by class
